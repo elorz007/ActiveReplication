@@ -3,21 +3,22 @@ package es.unavarra.distributedsystems.middleware;
 import java.util.ArrayList;
 
 import es.unavarra.distributedsystems.common.Identifier;
+import es.unavarra.distributedsystems.common.Logger;
 import es.unavarra.distributedsystems.common.MessageType;
 import es.unavarra.distributedsystems.common.Request;
 import es.unavarra.distributedsystems.communication.Connector;
+import es.unavarra.distributedsystems.communication.NetworkNode;
 import es.unavarra.distributedsystems.communication.Receiver;
-import es.unavarra.distributedsystems.end.FO;
 
 public class ARH implements Receiver {
 
 	private int lastServedReq;
 	private DSS sequencer;
-	private ArrayList<FO> replicas;
+	private ArrayList<NetworkNode> replicas;
 	private Connector connector;
 	private Request replyFromReplica;
 
-	public ARH(Connector connector, DSS sequencer, ArrayList<FO> replicas) {
+	public ARH(Connector connector, DSS sequencer, ArrayList<NetworkNode> replicas) {
 		this.connector = connector;
 		this.replicas = replicas;
 		this.lastServedReq = 0;
@@ -25,7 +26,7 @@ public class ARH implements Receiver {
 	}
 
 	@Override
-	public void receive(Request request, Receiver from) {
+	public void receive(Request request, NetworkNode from) {
 		switch (request.getMessageType()) {
 		case REQUEST:
 			this.handleClientRequest(request, from);
@@ -38,13 +39,15 @@ public class ARH implements Receiver {
 		}
 	}
 
-	private synchronized void handleTORReply(Request request, Receiver from) {
+	private synchronized void handleTORReply(Request request, NetworkNode from) {
 		replyFromReplica = request;
 		this.notify();
 	}
 
-	private synchronized void handleClientRequest(Request request, Receiver client) {
+	private synchronized void handleClientRequest(Request request, NetworkNode client) {
+		Logger.log("ARH: Handle client request: " + request);
 		int nSeq = sequencer.getSeq(request);
+		Logger.log("ARH: nSeq " + nSeq);
 		if (nSeq > lastServedReq + 1) {
 			for (int j = lastServedReq + 1; j < nSeq; j++) {
 				Request oldRequest = sequencer.getReq(j);
@@ -65,16 +68,16 @@ public class ARH implements Receiver {
 		reply.setId(request.getId());
 		reply.setMessage(replyFromReplica.getMessage());
 		reply.setMessageType(MessageType.REPLY);
-		connector.send(reply, this, client);
+		connector.send(reply, client);
 	}
 
 	public void sendTORRequest(int sequence, Request sourceRequest) {
-		for (FO r : replicas) {
+		for (NetworkNode r : replicas) {
 			Request request = new Request();
 			request.setId(new Identifier(sourceRequest.getId().getSenderId(), sequence));
 			request.setMessage(sourceRequest.getMessage());
 			request.setMessageType(MessageType.TORREQUEST);
-			connector.send(request, this, r);
+			connector.send(request, r);
 		}
 	}
 

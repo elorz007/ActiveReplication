@@ -6,18 +6,18 @@ import es.unavarra.distributedsystems.common.Identifier;
 import es.unavarra.distributedsystems.common.MessageType;
 import es.unavarra.distributedsystems.common.Request;
 import es.unavarra.distributedsystems.communication.Connector;
+import es.unavarra.distributedsystems.communication.NetworkNode;
 import es.unavarra.distributedsystems.communication.Receiver;
-import es.unavarra.distributedsystems.middleware.ARH;
 
 public class RR implements Receiver {
 
-	private ArrayList<ARH> hList;
+	private ArrayList<NetworkNode> hList;
 	private int clSeq;
 	private Connector connector;
 	private long timeout;
 	private String response;
 
-	public RR(Connector connector, ArrayList<ARH> hList) {
+	public RR(Connector connector, ArrayList<NetworkNode> hList) {
 		this.connector = connector;
 		this.hList = hList;
 		this.clSeq = 0;
@@ -35,7 +35,7 @@ public class RR implements Receiver {
 		int i = 0;
 		response = null;
 		while (response == null) {
-			connector.send(request, this, hList.get(i));
+			connector.send(request, hList.get(i));
 			try {
 				this.wait(timeout);
 			} catch (InterruptedException e) {}
@@ -48,7 +48,7 @@ public class RR implements Receiver {
 	}
 
 	@Override
-	public void receive(Request request, Receiver from) {
+	public void receive(Request request, NetworkNode from) {
 		switch (request.getMessageType()) {
 		case REPLY:
 			this.handleARHReply(request, from);
@@ -58,7 +58,7 @@ public class RR implements Receiver {
 		}
 	}
 
-	private synchronized void handleARHReply(Request request, Receiver from) {
+	private synchronized void handleARHReply(Request request, NetworkNode from) {
 		response = request.getMessage();
 		this.notify();
 	}

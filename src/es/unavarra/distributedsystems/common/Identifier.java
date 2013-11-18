@@ -28,7 +28,7 @@ public class Identifier {
 	}
 	
 	public boolean equalsToIdentifier(Identifier other) {
-		return other.getSenderId() == this.getSenderId() && other.getSeq() == this.getSeq();
+		return other != null && other.getSenderId() == this.getSenderId() && other.getSeq() == this.getSeq();
 	}
 	
 	@Override
