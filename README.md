@@ -5,8 +5,6 @@ The main components of the software are:
 * **ARH** - The middle layer. These are the responsibles of accepting client requests, order them (using DSS sequencers and total order broadcasts) and retransmit them to the replicas. ARHs can fail but at least one is needed.
 * **RR** - The upper layer. These are the processes that communicate with the middleware. They will take the messages given by the client and will try to reach different ARHs until they get a response
 
-## Authors
-W
 ## Install
 Download the source code and compile it using the apache ant command:
 ```
@@ -86,3 +84,16 @@ FO_NUMBER=1
 FO_PORT_START=5050
 ```
 
+## Authors
+Written by:
+* Mikel Elorz
+* Marcos Barrado
+* Ander Iraceburu
+
+Professor:
+* José Ramón González de Mendívil
+
+Class:
+* Sistemas distribuídos 2013-2014.
+* Ingeniería Informática.
+* UPNA
