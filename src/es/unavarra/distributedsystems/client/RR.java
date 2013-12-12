@@ -3,6 +3,7 @@ package es.unavarra.distributedsystems.client;
 import java.util.ArrayList;
 
 import es.unavarra.distributedsystems.common.Identifier;
+import es.unavarra.distributedsystems.common.Logger;
 import es.unavarra.distributedsystems.common.MessageType;
 import es.unavarra.distributedsystems.common.Request;
 import es.unavarra.distributedsystems.communication.Connector;
@@ -17,11 +18,11 @@ public class RR implements Receiver {
 	private long timeout;
 	private String response;
 
-	public RR(Connector connector, ArrayList<NetworkNode> hList) {
+	public RR(Connector connector, ArrayList<NetworkNode> hList, int timeoutMillis) {
 		this.connector = connector;
 		this.hList = hList;
 		this.clSeq = 0;
-		this.timeout = 10000; // 10 seconds
+		this.timeout = timeoutMillis;
 	}
 
 	public synchronized String issueReq(String message, int clientId) {
@@ -35,6 +36,7 @@ public class RR implements Receiver {
 		int i = 0;
 		response = null;
 		while (response == null) {
+			Logger.log("[RR " + clientId + "] Trying to communicate with ARH: " + hList.get(i));
 			connector.send(request, hList.get(i));
 			try {
 				this.wait(timeout);
@@ -48,17 +50,17 @@ public class RR implements Receiver {
 	}
 
 	@Override
-	public void receive(Request request, NetworkNode from) {
+	public void receive(Request request) {
 		switch (request.getMessageType()) {
 		case REPLY:
-			this.handleARHReply(request, from);
+			this.handleARHReply(request);
 			break;
 		default:
 			break;
 		}
 	}
 
-	private synchronized void handleARHReply(Request request, NetworkNode from) {
+	private synchronized void handleARHReply(Request request) {
 		response = request.getMessage();
 		this.notify();
 	}

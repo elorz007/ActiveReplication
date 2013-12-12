@@ -1,6 +1,10 @@
 package es.unavarra.distributedsystems.common;
 
-public class Identifier {
+import java.io.Serializable;
+
+public class Identifier implements Serializable {
+
+	private static final long serialVersionUID = -5669370369367621416L;
 	private int senderId;
 	private int seq;
 
@@ -26,14 +30,14 @@ public class Identifier {
 			return false;
 		}
 	}
-	
+
 	public boolean equalsToIdentifier(Identifier other) {
 		return other != null && other.getSenderId() == this.getSenderId() && other.getSeq() == this.getSeq();
 	}
-	
+
 	@Override
 	public String toString() {
 		// TODO Auto-generated method stub
-		return "< Sender: " + getSenderId() + ", seq: " + getSeq() + ">"; 
+		return "< Sender: " + getSenderId() + ", seq: " + getSeq() + ">";
 	}
 }

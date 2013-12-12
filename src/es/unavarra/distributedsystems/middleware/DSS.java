@@ -6,7 +6,6 @@ import es.unavarra.distributedsystems.common.Logger;
 import es.unavarra.distributedsystems.common.MessageType;
 import es.unavarra.distributedsystems.common.Request;
 import es.unavarra.distributedsystems.communication.Connector;
-import es.unavarra.distributedsystems.communication.NetworkNode;
 import es.unavarra.distributedsystems.communication.Receiver;
 
 public class DSS implements Receiver {
@@ -14,8 +13,10 @@ public class DSS implements Receiver {
 	private int localSeq;
 	private ArrayList<Request> sequenced;
 	private Connector connector;
+	private int id;
 
-	public DSS(Connector connector) {
+	public DSS(int id, Connector connector) {
+		this.id = id;
 		this.connector = connector;
 		this.localSeq = 1;
 		this.sequenced = new ArrayList<Request>();
@@ -42,17 +43,17 @@ public class DSS implements Receiver {
 	}
 
 	@Override
-	public void receive(Request request, NetworkNode from) {
+	public void receive(Request request) {
 		switch (request.getMessageType()) {
 		case TODELIVER:
-			this.handleTODeliver(request, from);
+			this.handleTODeliver(request);
 			break;
 		default:
 			break;
 		}
 	}
 
-	private synchronized void handleTODeliver(Request request, NetworkNode from) {
+	private synchronized void handleTODeliver(Request request) {
 		int nSeq = sequenced.indexOf(request);
 		if (nSeq == -1) {
 			Request emptyRequest = new Request();
@@ -61,7 +62,7 @@ public class DSS implements Receiver {
 			}
 			sequenced.set(localSeq, request);
 			localSeq++;
-			Logger.log("DSS: updated localSeq to: " + localSeq);
+			Logger.log("[DSS " + this.id + "] Updated local sequence number to: " + localSeq);
 		}
 		this.notify();
 	}

@@ -17,8 +17,10 @@ public class ARH implements Receiver {
 	private ArrayList<NetworkNode> replicas;
 	private Connector connector;
 	private Request replyFromReplica;
+	private int id;
 
-	public ARH(Connector connector, DSS sequencer, ArrayList<NetworkNode> replicas) {
+	public ARH(int id, Connector connector, DSS sequencer, ArrayList<NetworkNode> replicas) {
+		this.id = id;
 		this.connector = connector;
 		this.replicas = replicas;
 		this.lastServedReq = 0;
@@ -26,28 +28,29 @@ public class ARH implements Receiver {
 	}
 
 	@Override
-	public void receive(Request request, NetworkNode from) {
+	public void receive(Request request) {
 		switch (request.getMessageType()) {
 		case REQUEST:
-			this.handleClientRequest(request, from);
+			this.handleClientRequest(request);
 			break;
 		case TORREPLY:
-			this.handleTORReply(request, from);
+			this.handleTORReply(request);
 			break;
 		default: // Ignore the rest
 			break;
 		}
 	}
 
-	private synchronized void handleTORReply(Request request, NetworkNode from) {
+	private synchronized void handleTORReply(Request request) {
 		replyFromReplica = request;
 		this.notify();
 	}
 
-	private synchronized void handleClientRequest(Request request, NetworkNode client) {
-		Logger.log("ARH: Handle client request: " + request);
+	private synchronized void handleClientRequest(Request request) {
+		NetworkNode originalClient = request.getFrom();
+		Logger.log("[ARH " + this.id + "] Handle client request: " + request);
 		int nSeq = sequencer.getSeq(request);
-		Logger.log("ARH: nSeq " + nSeq);
+		Logger.log("[ARH " + this.id + "] Assigned sequence number: " + nSeq);
 		if (nSeq > lastServedReq + 1) {
 			for (int j = lastServedReq + 1; j < nSeq; j++) {
 				Request oldRequest = sequencer.getReq(j);
@@ -56,7 +59,6 @@ public class ARH implements Receiver {
 		}
 		sendTORRequest(nSeq, request);
 		lastServedReq = Math.max(lastServedReq, nSeq);
-
 		while (replyFromReplica == null) {
 			try {
 				this.wait(); // wait just for one replica to respond
@@ -68,7 +70,8 @@ public class ARH implements Receiver {
 		reply.setId(request.getId());
 		reply.setMessage(replyFromReplica.getMessage());
 		reply.setMessageType(MessageType.REPLY);
-		connector.send(reply, client);
+		connector.send(reply, originalClient);
+		Logger.log("[ARH " + this.id + "] Replied to " + originalClient + ": " + reply);
 	}
 
 	public void sendTORRequest(int sequence, Request sourceRequest) {
